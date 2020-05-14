@@ -285,6 +285,13 @@ func (sd *sliceDecoder) decode(d *decodeState, v reflect.Value, opts fieldOption
 		panic(fmt.Errorf("Not enough data to read elements"))
 	}
 
+	// For opaque values, we can return a reference instead of making a new slice
+	if v.Elem().Type().Elem().Kind() == reflect.Uint8 {
+		v.Elem().Set(reflect.ValueOf(elemData))
+		return read + length
+	}
+
+	// For other values, we need to decode the raw data
 	elemBuf := &decodeState{}
 	elemBuf.Write(elemData)
 	elems := []reflect.Value{}
