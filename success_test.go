@@ -7,6 +7,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func unhex(encoded string) []byte {
@@ -262,33 +264,22 @@ func TestSuccessCases(t *testing.T) {
 			encoding: unhex("056e62646565" + "B0A0" + "0a2522232e787f637e7735"),
 		},
 	}
+
 	for label, testCase := range testCases {
-		// Test that encode succeeds
-		encoding, err := Marshal(testCase.value)
-		if err != nil {
-			t.Fatalf("Encode error [%s]: %v", label, err)
-		}
+		t.Run(label, func(t *testing.T) {
+			// Test that encode succeeds
+			encoding, err := Marshal(testCase.value)
+			require.Nil(t, err)
+			require.Equal(t, encoding, testCase.encoding)
 
-		if !bytes.Equal(encoding, testCase.encoding) {
-			t.Fatalf("Invalid encoding [%s]: %x != %x", label, encoding, testCase.encoding)
-		}
+			// Test that decode succeeds
+			decodedPointer := reflect.New(reflect.TypeOf(testCase.value))
+			read, err := Unmarshal(testCase.encoding, decodedPointer.Interface())
+			require.Nil(t, err)
+			require.Equal(t, read, len(encoding))
 
-		// Test that decode succeeds
-		decodedPointer := reflect.New(reflect.TypeOf(testCase.value))
-		read, err := Unmarshal(testCase.encoding, decodedPointer.Interface())
-		if err != nil {
-			t.Fatalf("Decode error [%s]: %v", label, err)
-		}
-
-		if read != len(testCase.encoding) {
-			t.Fatalf("Decode failed to consume buffer [%s]: %v != %v", label, read, len(testCase.encoding))
-		}
-
-		decodedValue := decodedPointer.Elem().Interface()
-		if !reflect.DeepEqual(decodedValue, testCase.value) {
-			t.Fatalf("Invalid decoded value [%s]: %v != %v", label, decodedValue, testCase.value)
-		}
-
-		t.Logf("PASS [%s]", label)
+			decodedValue := decodedPointer.Elem().Interface()
+			require.Equal(t, decodedValue, testCase.value)
+		})
 	}
 }

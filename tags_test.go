@@ -4,6 +4,8 @@ import (
 	"reflect"
 	"runtime"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestTagParsing(t *testing.T) {
@@ -51,14 +53,11 @@ func TestTagParsing(t *testing.T) {
 
 	for _, c := range cases {
 		parsed := parseTag(c.encoded)
-		if !reflect.DeepEqual(parsed, c.opts) {
-			t.Fatalf("Incorrect options parsing: [%+v] != [%+v]", parsed, c.opts)
-		}
+		require.Equal(t, parsed, c.opts)
 	}
 }
 
 func TestTagConsistency(t *testing.T) {
-
 	cases := []string{
 		"head=3,head=none",
 		"head=none,head=varint",
@@ -88,9 +87,7 @@ func TestTagConsistency(t *testing.T) {
 
 	for _, opts := range cases {
 		err := tryToParse(opts)
-		if err == nil {
-			t.Fatalf("Incorrectly allowed inconsistent options: [%s]", opts)
-		}
+		require.NotNil(t, err)
 	}
 }
 
@@ -103,27 +100,11 @@ func TestTagValidity(t *testing.T) {
 	uintType := reflect.TypeOf(uint8(0))
 	ptrType := reflect.TypeOf(new(uint8))
 
-	if !sliceTags.ValidForType(sliceType) {
-		t.Fatalf("Rejected valid tags for slice")
-	}
+	require.True(t, sliceTags.ValidForType(sliceType))
+	require.True(t, uintTags.ValidForType(uintType))
+	require.True(t, ptrTags.ValidForType(ptrType))
 
-	if !uintTags.ValidForType(uintType) {
-		t.Fatalf("Rejected valid tags for uint")
-	}
-
-	if !ptrTags.ValidForType(ptrType) {
-		t.Fatalf("Rejected valid tags for ptr")
-	}
-
-	if uintTags.ValidForType(sliceType) {
-		t.Fatalf("Accepted invalid tags for slice: %v", uintTags)
-	}
-
-	if ptrTags.ValidForType(uintType) {
-		t.Fatalf("Accepted invalid tags for uint: %v", ptrTags)
-	}
-
-	if sliceTags.ValidForType(ptrType) {
-		t.Fatalf("Accepted invalid tags for ptr: %v", sliceTags)
-	}
+	require.False(t, uintTags.ValidForType(sliceType))
+	require.False(t, ptrTags.ValidForType(uintType))
+	require.False(t, sliceTags.ValidForType(ptrType))
 }
