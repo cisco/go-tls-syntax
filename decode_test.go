@@ -3,6 +3,8 @@ package syntax
 import (
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestDecodeUnsupported(t *testing.T) {
@@ -10,14 +12,12 @@ func TestDecodeUnsupported(t *testing.T) {
 
 	var yi int
 	read, err := Unmarshal(dummyBuffer, yi)
-	if err == nil || read != 0 {
-		t.Fatalf("Agreed to unmarshal to a non-pointer")
-	}
+	require.NotNil(t, err)
+	require.Equal(t, read, 0)
 
 	read, err = Unmarshal(dummyBuffer, nil)
-	if err == nil || read != 0 {
-		t.Fatalf("Agreed to unmarshal to a nil pointer")
-	}
+	require.NotNil(t, err)
+	require.Equal(t, read, 0)
 }
 
 func TestDecodeErrors(t *testing.T) {
@@ -144,9 +144,7 @@ func TestDecodeErrors(t *testing.T) {
 	for label, testCase := range errorCases {
 		decodedPointer := reflect.New(reflect.TypeOf(testCase.template))
 		read, err := Unmarshal(testCase.encoding, decodedPointer.Interface())
-		t.Logf("[%s] -> [%v]", label, err)
-		if err == nil || read > 0 {
-			t.Fatalf("Incorrectly allowed unmarshal [%s]: %v", label, err)
-		}
+		require.NotNil(t, err, label)
+		require.Equal(t, read, 0, label)
 	}
 }

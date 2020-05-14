@@ -3,6 +3,8 @@ package syntax
 import (
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestEncodeErrors(t *testing.T) {
@@ -47,10 +49,7 @@ func TestEncodeErrors(t *testing.T) {
 	}
 
 	for label, badValue := range errorCases {
-		encoded, err := Marshal(badValue)
-		t.Logf("[%s] -> [%v]", label, err)
-		if err == nil {
-			t.Fatalf("Incorrectly allowed marshal [%s]: [%x]", label, encoded)
-		}
+		_, err := Marshal(badValue)
+		require.NotNil(t, err, label)
 	}
 }

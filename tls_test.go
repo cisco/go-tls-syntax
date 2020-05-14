@@ -1,11 +1,10 @@
 package syntax
 
 import (
-	"bytes"
 	"encoding/hex"
-	"fmt"
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 type ProtocolVersion uint16
@@ -77,21 +76,13 @@ func TestTLSMarshal(t *testing.T) {
 
 	// ClientHello marshal
 	out, err := Marshal(chValidIn)
-	if err != nil {
-		t.Fatalf("Failed to marshal a valid ClientHello [%v]", err)
-	}
-	if !bytes.Equal(out, chValid) {
-		t.Fatalf("Failed to marshal a valid ClientHello [%x] != [%x]", out, chValid)
-	}
+	require.Nil(t, err)
+	require.Equal(t, out, chValid)
 
 	// ServerHello marshal
 	out, err = Marshal(shValidIn)
-	if err != nil {
-		t.Fatalf("Failed to marshal a valid ServerHello [%v]", err)
-	}
-	if !bytes.Equal(out, shValid) {
-		t.Fatalf("Failed to marshal a valid ServerHello [%x] != [%x]", out, shValid)
-	}
+	require.Nil(t, err)
+	require.Equal(t, out, shValid)
 }
 
 func TestTLSUnmarshal(t *testing.T) {
@@ -101,28 +92,14 @@ func TestTLSUnmarshal(t *testing.T) {
 	// ClientHello marshal
 	var ch ClientHello
 	read, err := Unmarshal(chValid, &ch)
-	if err != nil || read != len(chValid) {
-		t.Fatalf("Failed to unmarshal a valid ClientHello [%v]", err)
-	}
-	if !reflect.DeepEqual(ch, chValidIn) {
-		fmt.Println("LegacyVersion", reflect.DeepEqual(ch.LegacyVersion, chValidIn.LegacyVersion))
-		fmt.Println("Random", reflect.DeepEqual(ch.Random, chValidIn.Random))
-		fmt.Println("LegacySessionID")
-		fmt.Printf("  %+v\n", ch.LegacySessionID == nil)
-		fmt.Printf("  %+v\n", chValidIn.LegacySessionID == nil)
-		fmt.Println("CipherSuites", reflect.DeepEqual(ch.CipherSuites, chValidIn.CipherSuites))
-		fmt.Println("LegacyCompressionMethods", reflect.DeepEqual(ch.LegacyCompressionMethods, chValidIn.LegacyCompressionMethods))
-		fmt.Println("Extensions", reflect.DeepEqual(ch.Extensions, chValidIn.Extensions))
-		t.Errorf("Failed to unmarshal a valid ClientHello [%+v] [%+v]", ch, chValidIn)
-	}
+	require.Nil(t, err)
+	require.Equal(t, read, len(chValid))
+	require.Equal(t, ch, chValidIn)
 
 	// ServerHello marshal
 	var sh ServerHello
 	read, err = Unmarshal(shValid, &sh)
-	if err != nil || read != len(shValid) {
-		t.Fatalf("Failed to unmarshal a valid ServerHello [%v]", err)
-	}
-	if !reflect.DeepEqual(sh, shValidIn) {
-		t.Errorf("Failed to unmarshal a valid ServerHello")
-	}
+	require.Nil(t, err)
+	require.Equal(t, read, len(shValid))
+	require.Equal(t, sh, shValidIn)
 }
