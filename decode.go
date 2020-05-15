@@ -79,6 +79,7 @@ func typeDecoder(t reflect.Type) decoderFunc {
 
 var (
 	unmarshalerType = reflect.TypeOf(new(Unmarshaler)).Elem()
+	uint8Type       = reflect.TypeOf(uint8(0))
 )
 
 func newTypeDecoder(t reflect.Type) decoderFunc {
@@ -297,7 +298,7 @@ func (sd *sliceDecoder) decode(d *decodeState, v reflect.Value, opts fieldOption
 	}
 
 	// For opaque values, we can return a reference instead of making a new slice
-	if v.Elem().Type().Elem().Kind() == reflect.Uint8 {
+	if v.Elem().Type().Elem() == uint8Type {
 		v.Elem().Set(reflect.ValueOf(elemData))
 		return read + length
 	}
