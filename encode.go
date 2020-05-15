@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"runtime"
 	"sort"
+	"sync"
 )
 
 func Marshal(v interface{}) ([]byte, error) {
@@ -56,9 +57,19 @@ func valueEncoder(v reflect.Value) encoderFunc {
 	return typeEncoder(v.Type())
 }
 
+var encoderCache sync.Map // map[reflect.Type]encoderFunc
+
 func typeEncoder(t reflect.Type) encoderFunc {
-	// Note: Omits the caching / wait-group things that encoding/json uses
-	return newTypeEncoder(t)
+	if fi, ok := encoderCache.Load(t); ok {
+		return fi.(encoderFunc)
+	}
+
+	// XXX(RLB): Wait group based support for recursive types omitted
+
+	// Compute the real encoder and replace the indirect func with it.
+	f := newTypeEncoder(t)
+	encoderCache.Store(t, f)
+	return f
 }
 
 var (

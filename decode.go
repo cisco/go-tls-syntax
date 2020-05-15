@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"runtime"
+	"sync"
 )
 
 func Unmarshal(data []byte, v interface{}) (int, error) {
@@ -61,9 +62,19 @@ func valueDecoder(v reflect.Value) decoderFunc {
 	return typeDecoder(v.Type().Elem())
 }
 
+var decoderCache sync.Map // map[reflect.Type]decoderFunc
+
 func typeDecoder(t reflect.Type) decoderFunc {
-	// Note: Omits the caching / wait-group things that encoding/json uses
-	return newTypeDecoder(t)
+	if fi, ok := decoderCache.Load(t); ok {
+		return fi.(decoderFunc)
+	}
+
+	// XXX(RLB): Wait group based support for recursive types omitted
+
+	// Compute the real decoder and replace the indirect func with it.
+	f := newTypeDecoder(t)
+	decoderCache.Store(t, f)
+	return f
 }
 
 var (
