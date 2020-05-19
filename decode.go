@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"runtime"
+	"sync"
 )
 
 func Unmarshal(data []byte, v interface{}) (int, error) {
@@ -61,13 +62,24 @@ func valueDecoder(v reflect.Value) decoderFunc {
 	return typeDecoder(v.Type().Elem())
 }
 
+var decoderCache sync.Map // map[reflect.Type]decoderFunc
+
 func typeDecoder(t reflect.Type) decoderFunc {
-	// Note: Omits the caching / wait-group things that encoding/json uses
-	return newTypeDecoder(t)
+	if fi, ok := decoderCache.Load(t); ok {
+		return fi.(decoderFunc)
+	}
+
+	// XXX(RLB): Wait group based support for recursive types omitted
+
+	// Compute the real decoder and replace the indirect func with it.
+	f := newTypeDecoder(t)
+	decoderCache.Store(t, f)
+	return f
 }
 
 var (
 	unmarshalerType = reflect.TypeOf(new(Unmarshaler)).Elem()
+	uint8Type       = reflect.TypeOf(uint8(0))
 )
 
 func newTypeDecoder(t reflect.Type) decoderFunc {
@@ -285,6 +297,13 @@ func (sd *sliceDecoder) decode(d *decodeState, v reflect.Value, opts fieldOption
 		panic(fmt.Errorf("Not enough data to read elements"))
 	}
 
+	// For opaque values, we can return a reference instead of making a new slice
+	if v.Elem().Type().Elem() == uint8Type {
+		v.Elem().Set(reflect.ValueOf(elemData))
+		return read + length
+	}
+
+	// For other values, we need to decode the raw data
 	elemBuf := &decodeState{}
 	elemBuf.Write(elemData)
 	elems := []reflect.Value{}
