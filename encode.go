@@ -200,11 +200,9 @@ func writeVarint(e *encodeState, u uint64) {
 }
 
 func writeUint(e *encodeState, u uint64, len int) {
-	data := make([]byte, len)
 	for i := 0; i < len; i += 1 {
-		data[i] = byte(u >> uint(8*(len-i-1)))
+		e.WriteByte(byte(u >> uint(8*(len-i-1))))
 	}
-	e.Write(data)
 }
 
 //////////
