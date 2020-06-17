@@ -1,3 +1,5 @@
+[![Coverage Status](https://coveralls.io/repos/github/cisco/go-tls-syntax/badge.svg)](https://coveralls.io/github/cisco/go-tls-syntax)
+
 TLS Syntax
 ==========
 
